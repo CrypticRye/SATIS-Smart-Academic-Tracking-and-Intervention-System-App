@@ -7,8 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function Home() {
@@ -30,7 +30,7 @@ export default function Home() {
                 style={styles.avatar}
               />
             </View>
-            <View style={styles.profileText}>
+            <View >
               <Text style={styles.grade}>Grade 12</Text>
               <Text style={styles.stream}>STEM</Text>
             </View>
@@ -176,7 +176,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fcc9dd",
+    backgroundColor: "#FFF0F5",
   },
   scrollView: {
     flex: 1,
@@ -204,16 +204,14 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  profileText: {
-    alignItems: "flex-end",
-  },
+  
   grade: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: "bold",
     color: "#1f2937",
   },
   stream: {
-    fontSize: 14,
+    fontSize: 10,
     color: "#374151",
   },
   searchContainer: {

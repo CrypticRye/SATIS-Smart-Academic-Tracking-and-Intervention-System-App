@@ -1,9 +1,9 @@
 import { View, Text } from "react-native";
 
-export default function Settings() {
+export default function SubjectRisk() {
   return (
     <View>
-      <Text>Settings Screen</Text>
+      <Text>Subect at Risk Screen</Text>
     </View>
   );
 }
