@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const AcademicTracker = () => {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('all');
 
   const subjects = [
@@ -105,27 +107,38 @@ const AcademicTracker = () => {
 
         {/* Subject Cards */}
         <View style={styles.subjectsContainer}>
-          {filteredSubjects.map((subject, index) => (
-            <View key={index} style={styles.subjectCard}>
-              <Text style={styles.subjectName}>{subject.name}</Text>
-              <Text style={styles.teacherName}>👤 {subject.teacher}</Text>
-              <Text style={styles.gradeLabel}>EXPECTED FINAL GRADE</Text>
-              <Text style={[styles.gradeValue, { color: getGradeColor(subject.grade) }]}>
-                {subject.grade}
-              </Text>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${subject.grade}%`,
-                      backgroundColor: getGradeColor(subject.grade),
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-          ))}
+              {filteredSubjects.map((subject, index) => (
+                    <TouchableOpacity 
+                      key={index} 
+                      style={styles.subjectCard}
+                      onPress={() => router.push({
+                      pathname: '/(screens)/SubjectDetail',
+                      params: { 
+                        subjectName: subject.name,
+                        teacher: subject.teacher,
+                        grade: subject.grade.toString(),
+                      }
+                    })}
+                    >
+                      <Text style={styles.subjectName}>{subject.name}</Text>
+                      <Text style={styles.teacherName}>👤 {subject.teacher}</Text>
+                      <Text style={styles.gradeLabel}>EXPECTED FINAL GRADE</Text>
+                      <Text style={[styles.gradeValue, { color: getGradeColor(subject.grade) }]}>
+                        {subject.grade}
+                      </Text>
+                      <View style={styles.progressBar}>
+                        <View
+                          style={[
+                            styles.progressFill,
+                            {
+                              width: `${subject.grade}%`,
+                              backgroundColor: getGradeColor(subject.grade),
+                            },
+                          ]}
+                        />
+                      </View>
+                    </TouchableOpacity>
+              ))}
         </View>
 
         <View style={styles.footer}>
