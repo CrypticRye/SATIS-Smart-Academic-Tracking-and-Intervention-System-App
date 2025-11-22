@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Mainmenu from "../mainMenu.jsx";
 import {
   View,
   Text,
@@ -19,20 +20,7 @@ import { useRouter } from 'expo-router';
 
 const Intervention = () => {
   const [activeFilter, setActiveFilter] = useState('All');
-  const router = useRouter();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerMounted, setDrawerMounted] = useState(false);
-  const width = Dimensions.get('window').width;
-  const translateX = useRef(new Animated.Value(-width * 0.8)).current;
-
-  useEffect(() => {
-    if (drawerOpen) {
-      setDrawerMounted(true);
-      Animated.timing(translateX, { toValue: 0, duration: 260, useNativeDriver: true }).start();
-    } else {
-      Animated.timing(translateX, { toValue: -width * 0.8, duration: 220, useNativeDriver: true }).start(() => setDrawerMounted(false));
-    }
-  }, [drawerOpen, translateX, width]);
+ 
 
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -147,26 +135,16 @@ const Intervention = () => {
 
   return (
   
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setDrawerOpen(true)}>
-          <Ionicons name="menu" size={28} color="#111" />
-        </TouchableOpacity>
-        <View style={styles.profileSection}>
-          <View style={styles.profileImage}>
-            <Image
-              source={{ uri: "https://via.placeholder.com/48" }}
-              style={styles.avatar}
-            />
-          </View>
-          <View>
-            <Text style={styles.grade}>Grade 12</Text>
-            <Text style={styles.stream}>STEM</Text>
-          </View>
-        </View>
-      </View>
-
+    <SafeAreaView style={styles.safe}>
+  <View style={styles.mainMenuWrapper}>
+    <Mainmenu />
+  </View>
+  
+  <ScrollView 
+    style={styles.scrollView}
+    contentContainerStyle={styles.scrollContent}
+    showsVerticalScrollIndicator={false}
+  >
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <TextInput 
@@ -174,9 +152,6 @@ const Intervention = () => {
           placeholder="Search"
           placeholderTextColor="#999"
         />
-        <TouchableOpacity style={styles.bellIcon}>
-          <Bell size={24} color="#000" />
-        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -269,6 +244,7 @@ const Intervention = () => {
               <Text style={styles.statusText}>{intervention.status}</Text>
             </View>
           </View>
+           
         ))}
 
         {/* Quick Actions */}
@@ -408,95 +384,34 @@ const Intervention = () => {
         </View>
       </Modal>
 
-      {/* Drawer overlay */}
-      {drawerMounted && (
-        <>
-          <TouchableOpacity style={styles.drawerBackdrop} onPress={() => setDrawerOpen(false)} />
-          <Animated.View style={[styles.drawer, { transform: [{ translateX }] }] }>
-            <Text style={styles.drawerTitle}>Menu</Text>
-            <TouchableOpacity
-              style={styles.drawerItem}
-              onPress={() => { setDrawerOpen(false); router.push('/Screens/Aboutscreen'); }}
-            >
-              <Text style={styles.drawerItemText}>About Us</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.drawerItem}
-              onPress={() => { setDrawerOpen(false); router.push('/Screens/Settings'); }}
-            >
-              <Text style={styles.drawerItemText}>Settings</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </>
-      )}
-    </View>
+    </ScrollView>
+    
+        </SafeAreaView>
+ 
+   
+    
     
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF0F5',
-    paddingTop: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 16,
-  },
-  profileSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  profileImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 10,
-    backgroundColor: '#374151',
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
-    backgroundColor: '#E0E0E0',
-  },
-  grade: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  stream: {
-    fontSize: 10,
-    color: '#374151',
-  },
-  gradebadge: {
-    borderRadius: 12,
-    padding: 8,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-  },
-  gradeB: {
-    backgroundColor: '#FFB6C1',
-    borderRadius: 20,
-    padding: 8,
-    paddingHorizontal: 12,
-  },
-  gradeBadgeText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  gradeBadgeSubtext: {
-    fontSize: 11,
-    color: '#666',
-    fontWeight: '500',
-  },
+  safe: {
+  flex: 1,
+  backgroundColor: '#fff7fb', // Same pink background
+},
+mainMenuWrapper: {
+  paddingHorizontal: 16,
+  paddingTop: 8,
+  backgroundColor: '#fff7fb',
+},
+scrollView: {
+  flex: 1,
+},
+scrollContent: {
+  padding: 16,          // or paddingHorizontal: 16
+  paddingTop: 8,
+  paddingBottom: 100,   // Space for bottom navigation
+},
   searchContainer: {
     flexDirection: 'row',
     padding: 16,
@@ -510,9 +425,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     fontSize: 14,
-  },
-  bellIcon: {
-    padding: 8,
   },
   content: {
     flex: 1,

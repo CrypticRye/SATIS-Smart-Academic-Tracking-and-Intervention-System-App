@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import Mainmenu from '../mainMenu.jsx';
 import {
   ScrollView,
   View,
@@ -8,6 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -113,16 +115,16 @@ export default function AttendanceDashboard() {
   const calendarCellSize = Math.floor((SCREEN_WIDTH - 40 - 6 * 8) / 7); // padding at gaps
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={styles.avatarLeft}>
-            <View style={styles.notificationDot} />
-            <Text style={styles.bellEmoji}>🔔</Text>
-          </View>
-          <View style={styles.avatarRight} />
-        </View>
+   <SafeAreaView style={styles.safe}>
+  <View style={styles.mainMenuWrapper}>
+    <Mainmenu />
+  </View>
+  
+  <ScrollView 
+    style={styles.scrollView}
+    contentContainerStyle={styles.scrollContent}
+    showsVerticalScrollIndicator={false}
+  >
 
         {/* Attendance Overview modal */}
         <View style={styles.card}>
@@ -355,13 +357,22 @@ export default function AttendanceDashboard() {
 
 const styles = StyleSheet.create({
   safe: {
-    flex: 1,
-    backgroundColor: '#fff7fb', // pink background
-  },
-  container: {
-    padding: 16,
-    paddingBottom: 40,
-  },
+  flex: 1,
+  backgroundColor: '#fff7fb', // Same pink background
+},
+mainMenuWrapper: {
+  paddingHorizontal: 16,
+  paddingTop: 8,
+  backgroundColor: '#fff7fb',
+},
+scrollView: {
+  flex: 1,
+},
+scrollContent: {
+  padding: 16,          // or paddingHorizontal: 16
+  paddingTop: 8,
+  paddingBottom: 100,   // Space for bottom navigation
+},
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

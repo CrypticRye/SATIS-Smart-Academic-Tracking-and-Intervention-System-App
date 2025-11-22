@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import Mainmenu from "../mainMenu.jsx";
+
 import {
   View,
   Text,
@@ -10,60 +12,24 @@ import {
   ImageBackground,
   Animated,
   Dimensions,
+  StatusBar
 } from "react-native";
-import school from '../../assets/school.jpg';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 export default function Home() {
-  const router = useRouter();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerMounted, setDrawerMounted] = useState(false);
-  const width = Dimensions.get('window').width;
-  const translateX = useRef(new Animated.Value(-width * 0.8)).current;
-
-  useEffect(() => {
-    if (drawerOpen) {
-      setDrawerMounted(true);
-      Animated.timing(translateX, {
-        toValue: 0,
-        duration: 260,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(translateX, {
-        toValue: -width * 0.8,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => setDrawerMounted(false));
-    }
-  }, [drawerOpen, translateX, width]);
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.mainMenuWrapper}>
+        <Mainmenu />
+      </View>
+
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setDrawerOpen(true)}>
-            <Ionicons name="menu" size={28} color="#1f2937" />
-          </TouchableOpacity>
-          <View style={styles.profileSection}>
-            <View style={styles.profileImage}>
-              <Image
-                source={{ uri: "https://via.placeholder.com/48" }}
-                style={styles.avatar}
-              />
-            </View>
-            <View >
-              <Text style={styles.grade}>Grade 12</Text>
-              <Text style={styles.stream}>STEM</Text>
-            </View>
-          </View>
-        </View>
-
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Ionicons
@@ -83,69 +49,47 @@ export default function Home() {
         </View>
 
         {/* Welcome Card */}
-        <ImageBackground source={require('../../assets/school.jpg')} style={styles.welcomeCard}>
+        <ImageBackground
+          source={require('../../assets/school.jpg')}
+          style={styles.welcomeCard}
+          imageStyle={styles.welcomeCardImage}
+        >
           <View style={styles.welcomeOverlay}>
             <Text style={styles.welcomeTitle}>Welcome Back, Sheena!</Text>
             <Text style={styles.welcomeSubtitle}>Lorem Ipsum</Text>
           </View>
         </ImageBackground>
 
-        {/* Drawer overlay */}
-        {drawerMounted && (
-          <>
-            <TouchableOpacity style={styles.drawerBackdrop} onPress={() => setDrawerOpen(false)} />
-            <Animated.View style={[styles.drawer, { transform: [{ translateX }] }] }>
-              <Text style={styles.drawerTitle}>Menu</Text>
-              <TouchableOpacity
-                style={styles.drawerItem}
-                onPress={() => {
-                  setDrawerOpen(false);
-                  router.push('/Screens/Aboutscreen');
-                }}
-              >
-                <Text style={styles.drawerItemText}>About Us</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.drawerItem}
-                onPress={() => {
-                  setDrawerOpen(false);
-                  router.push('/Screens/Settings');
-                }}
-              >
-                <Text style={styles.drawerItemText}>Settings</Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </>
-        )}
-        {/* Stats Grid */}
+        {/* Stats Grid - Row 1 */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>GPA</Text>
             <Text style={styles.statValue}>3.5</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Subject at Risk</Text>
+            <Text style={styles.statLabel}>Subjects at Risk</Text>
             <Text style={styles.statValue}>3</Text>
           </View>
         </View>
 
+        {/* Stats Grid - Row 2 */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>Attendance</Text>
             <Text style={styles.statValue}>85%</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Subject at Risk</Text>
-            <Text style={styles.statValue}>3</Text>
+            <Text style={styles.statLabel}>Task Completion</Text>
+            <Text style={styles.statValue}>70%</Text>
           </View>
         </View>
 
         {/* Performance Metrics */}
         <View style={styles.metricsCard}>
-          <Text style={styles.metricsTitle}>Performance Metrics:</Text>
+          <Text style={styles.metricsTitle}>Performance Metrics</Text>
 
           <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Academic Performance:</Text>
+            <Text style={styles.metricLabel}>Academic Performance</Text>
             <View style={styles.progressBarContainer}>
               <View style={[styles.progressBar, { width: "45%" }]} />
             </View>
@@ -159,9 +103,9 @@ export default function Home() {
           </View>
 
           <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Attendance Rate:</Text>
+            <Text style={styles.metricLabel}>Attendance Rate</Text>
             <View style={styles.progressBarContainer}>
-              <View style={[styles.progressBar, { width: "50%" }]} />
+              <View style={[styles.progressBar, { width: "85%" }]} />
             </View>
             <View style={styles.progressLabels}>
               <Text style={styles.progressLabel}>0</Text>
@@ -173,9 +117,9 @@ export default function Home() {
           </View>
 
           <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Task Completion:</Text>
+            <Text style={styles.metricLabel}>Task Completion</Text>
             <View style={styles.progressBarContainer}>
-              <View style={[styles.progressBar, { width: "50%" }]} />
+              <View style={[styles.progressBar, { width: "70%" }]} />
             </View>
             <View style={styles.progressLabels}>
               <Text style={styles.progressLabel}>0</Text>
@@ -186,8 +130,8 @@ export default function Home() {
             </View>
           </View>
 
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Overall Health:</Text>
+          <View style={[styles.metricItem, styles.lastMetricItem]}>
+            <Text style={styles.metricLabel}>Overall Health</Text>
             <View style={styles.progressBarContainer}>
               <View style={[styles.progressBar, { width: "70%" }]} />
             </View>
@@ -201,7 +145,7 @@ export default function Home() {
           </View>
         </View>
 
-        {/* Bottom Stats */}
+        {/* Bottom Stats Summary */}
         <View style={styles.bottomStatsCard}>
           <View style={styles.bottomStatsRow}>
             <View style={styles.bottomStat}>
@@ -213,14 +157,14 @@ export default function Home() {
               <Text style={styles.bottomStatLabel}>Attendance</Text>
             </View>
           </View>
-          <View style={styles.bottomStatsRow}>
+          <View style={[styles.bottomStatsRow, styles.lastBottomRow]}>
             <View style={styles.bottomStat}>
               <Text style={styles.bottomStatValue}>3/3</Text>
-              <Text style={styles.bottomStatLabel}>Subject Tracked</Text>
+              <Text style={styles.bottomStatLabel}>Subjects Tracked</Text>
             </View>
             <View style={styles.bottomStat}>
               <Text style={styles.bottomStatValue}>70%</Text>
-              <Text style={styles.bottomStatLabel}>Task Complete</Text>
+              <Text style={styles.bottomStatLabel}>Tasks Complete</Text>
             </View>
           </View>
         </View>
@@ -230,49 +174,23 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFF0F5",
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 13,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 16,
-  },
-  profileSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  
-  },
-  profileImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 10,
-    backgroundColor: "#374151",
-    overflow: "hidden",
-  },
-  avatar: {
-    width: "100%",
-    height: "100%",
-  },
-  
-  grade: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1f2937",
-  },
-  stream: {
-    fontSize: 10,
-    color: "#374151",
-  },
+  safe: {
+  flex: 1,
+  backgroundColor: '#fff7fb', // Same pink background
+},
+mainMenuWrapper: {
+  paddingHorizontal: 16,
+  paddingTop: 8,
+  backgroundColor: '#fff7fb',
+},
+scrollView: {
+  flex: 1,
+},
+scrollContent: {
+  padding: 16,          // or paddingHorizontal: 16
+  paddingTop: 8,
+  paddingBottom: 100,   // Space for bottom navigation
+},
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -280,75 +198,51 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 3,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: "#1f2937",
+   
   },
-    drawerBackdrop: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      zIndex: 40,
-    },
-    drawer: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      bottom: 0,
-      width: '80%',
-      backgroundColor: '#f3f4f6',
-      paddingTop: 60,
-      paddingHorizontal: 16,
-      elevation: 12,
-      zIndex: 50,
-      shadowColor: '#000',
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 2, height: 0 },
-      shadowRadius: 8,
-    },
-    drawerTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 12,
-    },
-    drawerItem: {
-      paddingVertical: 12,
-    },
-    drawerItemText: {
-      fontSize: 16,
-    },
   bellIcon: {
-    marginLeft: 8,
+    marginLeft: 10,
+    padding: 4,
   },
   welcomeCard: {
-    borderRadius: 24,
-    padding: 10,
-    marginBottom: 16,
+    borderRadius: 20,
+    marginBottom: 20,
     overflow: 'hidden',
-    minHeight: 100,
+    height: 160,
+    justifyContent: 'flex-end',
+  },
+  welcomeCardImage: {
+    borderRadius: 20,
   },
   welcomeOverlay: {
-    padding: 16,
-    borderRadius: 12,
-  }, 
+    padding: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
   welcomeTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#000000ff",
-    marginBottom: 8,
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#000000",
+    marginBottom: 4,
   },
   welcomeSubtitle: {
-    fontSize: 16,
-    color: "#000000ff",
+    fontSize: 14,
+    color: "#000000",
+    opacity: 0.9,
   },
   statsGrid: {
     flexDirection: "row",
@@ -358,48 +252,64 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: "white",
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
     alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 3,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: "#6b7280",
-    marginBottom: 8,
+    marginBottom: 12,
     textAlign: "center",
   },
   statValue: {
     fontSize: 48,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "#1f2937",
   },
   metricsCard: {
     backgroundColor: "white",
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 3,
   },
   metricsTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "700",
     color: "#1f2937",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   metricItem: {
     marginBottom: 24,
   },
+  lastMetricItem: {
+    marginBottom: 0,
+  },
   metricLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: "#1f2937",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   progressBarContainer: {
     height: 32,
     backgroundColor: "#e5e7eb",
     borderRadius: 16,
     overflow: "hidden",
+    marginBottom: 8,
   },
   progressBar: {
     height: "100%",
@@ -409,22 +319,30 @@ const styles = StyleSheet.create({
   progressLabels: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 4,
+    paddingHorizontal: 4,
   },
   progressLabel: {
-    fontSize: 12,
-    color: "#6b7280",
+    fontSize: 11,
+    color: "#9ca3af",
   },
   bottomStatsCard: {
     backgroundColor: "white",
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 32,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 3,
   },
   bottomStatsRow: {
     flexDirection: "row",
-    gap: 24,
+    gap: 20,
     marginBottom: 24,
+  },
+  lastBottomRow: {
+    marginBottom: 0,
   },
   bottomStat: {
     flex: 1,
@@ -432,13 +350,14 @@ const styles = StyleSheet.create({
   },
   bottomStatValue: {
     fontSize: 48,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "#1f2937",
     marginBottom: 8,
   },
   bottomStatLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: "#6b7280",
     textAlign: "center",
+    fontWeight: "500",
   },
 });

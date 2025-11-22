@@ -9,6 +9,7 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Mainmenu from '../mainMenu';
 
 export default function SubjectRisk() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -376,14 +377,7 @@ export default function SubjectRisk() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={styles.avatarLeft}>
-            <View style={styles.notificationDot} />
-            <Text style={styles.bellEmoji}>🔔</Text>
-          </View>
-          <View style={styles.avatarRight} />
-        </View>
+        <Mainmenu />
 
         {/* Stats Overview */}
         <View style={styles.statsCard}>

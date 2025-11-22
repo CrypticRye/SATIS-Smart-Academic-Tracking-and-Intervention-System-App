@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import Mainmenu from '../mainMenu';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from 'expo-router';
 
 const AcademicTracker = () => {
@@ -45,8 +47,12 @@ const AcademicTracker = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.mainMenuWrapper}>
+      <Mainmenu />
+      </View>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>My Subjects</Text>
@@ -160,13 +166,23 @@ const AcademicTracker = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFE4F0',
-  },
-  scrollView: {
-    flex: 1,
-  },
+  safe: {
+  flex: 1,
+  backgroundColor: '#fff7fb', // Same pink background
+},
+mainMenuWrapper: {
+  paddingHorizontal: 16,
+  paddingTop: 8,
+  backgroundColor: '#fff7fb',
+},
+scrollView: {
+  flex: 1,
+},
+scrollContent: {
+  padding: 16,          // or paddingHorizontal: 16
+  paddingTop: 8,
+  paddingBottom: 100,   // Space for bottom navigation
+},
   header: {
     padding: 20,
     paddingTop: 10,
