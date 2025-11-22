@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -18,7 +18,20 @@ const AcademicTracker = () => {
     { name: 'UCSP', teacher: 'Mr. Ramos', grade: 70 },
   ];
 
-  const getGradeColor = (grade) => {
+    const stats = useMemo(() => {
+    const grades = subjects.map(s => s.grade);
+
+    const average = Number((grades.reduce((a, b) => a + b, 0) / grades.length).toFixed(1));
+    const highest = Math.max(...grades);
+    const lowest = Math.min(...grades);
+    const PASSING_MARK = 75;
+    const passed = grades.filter(g => g >= PASSING_MARK).length;
+    const total = grades.length;
+
+    return { average, highest, lowest, passed, total };
+  }, [subjects]);
+
+    const getGradeColor = (grade) => {
     if (grade >= 90) return '#00C853';
     if (grade >= 85) return '#2196F3';
     if (grade >= 70) return '#FFC107';
@@ -45,16 +58,13 @@ const AcademicTracker = () => {
           <View style={[styles.statCard, styles.statCardHalf]}>
             <Text style={styles.statIcon}>📊</Text>
             <Text style={styles.statLabel}>Overall Average</Text>
-            <View style={styles.statValueRow}>
-              <Text style={styles.statValue}>84.9</Text>
-              <Text style={styles.statChange}>-2.5%</Text>
-            </View>
+           <Text style={styles.statValue}>{stats.average}%</Text>
           </View>
           
           <View style={[styles.statCard, styles.statCardHalf]}>
             <Text style={styles.statIcon}>🎯</Text>
             <Text style={styles.statLabel}>Highest Grade</Text>
-            <Text style={[styles.statValue, { color: '#00C853' }]}>95</Text>
+            <Text style={[styles.statValue, { color: '#00C853' }]}>{stats.highest}</Text>
           </View>
         </View>
 
@@ -62,14 +72,14 @@ const AcademicTracker = () => {
           <View style={[styles.statCard, styles.statCardHalf]}>
             <Text style={styles.statIcon}>⚠️</Text>
             <Text style={styles.statLabel}>Lowest Grade</Text>
-            <Text style={[styles.statValue, { color: '#F44336' }]}>70</Text>
+            <Text style={[styles.statValue, { color: '#F44336' }]}>{stats.lowest}</Text>
           </View>
           
           <View style={[styles.statCard, styles.statCardHalf]}>
             <Text style={styles.statIcon}>📈</Text>
             <Text style={styles.statLabel}>Passing Subjects</Text>
-            <Text style={[styles.statValue, { color: '#9C27B0' }]}>8/9</Text>
-          </View>
+            <Text style={[styles.statValue, { color: '#9C27B0' }]}>{stats.passed} / {stats.total}</Text>
+            </View>
         </View>
 
         {/* Filters */}
