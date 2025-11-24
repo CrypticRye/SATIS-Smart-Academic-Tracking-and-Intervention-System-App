@@ -229,13 +229,7 @@ const Intervention = () => {
               </View>
             </View>
 
-            <Text style={styles.actionPlanTitle}>Action Plan:</Text>
-            {intervention.actionPlan.map((action, idx) => (
-              <View key={idx} style={styles.checkboxContainer}>
-                <View style={styles.checkbox} />
-                <Text style={styles.checkboxLabel}>{action}</Text>
-              </View>
-            ))}
+            
 
             <View style={[
               styles.statusBadge,
@@ -400,7 +394,7 @@ const styles = StyleSheet.create({
   backgroundColor: '#fff7fb', // Same pink background
 },
 mainMenuWrapper: {
-  paddingHorizontal: 16,
+  paddingHorizontal: 8,
   paddingTop: 8,
   backgroundColor: '#fff7fb',
 },
@@ -423,12 +417,18 @@ scrollContent: {
     backgroundColor: '#fff',
     borderRadius: 25,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 20,
     fontSize: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   content: {
     flex: 1,
     padding: 16,
+    width: '100%',
   },
   title: {
     fontSize: 24,
@@ -436,10 +436,21 @@ scrollContent: {
     marginBottom: 16,
   },
   filterContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    paddingVertical: 20,
+    marginBottom: 16,
     flexDirection: 'row',
-    gap: 8,
     marginBottom: 16,
     flexWrap: 'wrap',
+    width: '100%',
+   
   },
   filterTab: {
     paddingHorizontal: 16,
@@ -465,6 +476,11 @@ scrollContent: {
     padding: 16,
     marginBottom: 16,
     justifyContent: 'space-around',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   statBox: {
     alignItems: 'center',
@@ -484,6 +500,11 @@ scrollContent: {
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -517,6 +538,7 @@ scrollContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
+    
   },
   gradeBox: {
     flex: 1,
@@ -583,6 +605,14 @@ scrollContent: {
     marginBottom: 16,
   },
   quickActions: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
     flexDirection: 'row',
     gap: 12,
     marginBottom: 24,

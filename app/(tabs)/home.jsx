@@ -56,7 +56,7 @@ export default function Home() {
         >
           <View style={styles.welcomeOverlay}>
             <Text style={styles.welcomeTitle}>Welcome Back, Sheena!</Text>
-            <Text style={styles.welcomeSubtitle}>Lorem Ipsum</Text>
+            <Text style={styles.welcomeSubtitle}>From Grade 12 - TVL</Text>
           </View>
         </ImageBackground>
 
@@ -224,25 +224,26 @@ scrollContent: {
     marginBottom: 20,
     overflow: 'hidden',
     height: 160,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-top',
   },
   welcomeCardImage: {
     borderRadius: 20,
   },
   welcomeOverlay: {
     padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    
   },
   welcomeTitle: {
     fontSize: 26,
     fontWeight: "700",
     color: "#000000",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   welcomeSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#000000",
     opacity: 0.9,
+    fontWeight: "500",
   },
   statsGrid: {
     flexDirection: "row",

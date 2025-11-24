@@ -119,18 +119,7 @@ function Mainmenu() {
                 style={styles.drawerItem}
                 onPress={() => {
                   setDrawerOpen(false);
-                  router.push('/Screens/Settings');
-                }}
-              >
-                <Ionicons name="settings-outline" size={24} color="#1f2937" />
-                <Text style={styles.drawerItemText}>Settings</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.drawerItem}
-                onPress={() => {
-                  setDrawerOpen(false);
-                  // Add your profile navigation
+                  router.push('/Screens/profile');
                 }}
               >
                 <Ionicons name="person-outline" size={24} color="#1f2937" />
