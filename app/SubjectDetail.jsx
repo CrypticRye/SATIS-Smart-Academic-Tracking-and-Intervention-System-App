@@ -296,38 +296,129 @@ const SubjectDetail = () => {
           </View>
         </View>
 
-        {/* Grade Trend */}
-        <View style={styles.trendSection}>
-          <View style={styles.trendHeader}>
-            <Text style={styles.trendIcon}>📈</Text>
-            <Text style={styles.trendTitle}>Grade Trend</Text>
+<View style={styles.trendSection}>
+  <View style={styles.trendHeader}>
+    <Text style={styles.trendIcon}></Text>
+    <Text style={styles.trendTitle}>Grade Trend</Text>
+  </View>
+  <Text style={styles.trendSubtitle}>
+    Academic Performance Overview • School Year 2024-2025
+  </Text>
+
+  <View style={styles.summaryRow}>
+    <View style={styles.summaryCard}>
+      <Text style={styles.summaryLabel}>OVERALL AVERAGE</Text>
+      <Text style={styles.summaryValue}>87.5 <Text style={styles.avgTag}>AVG</Text></Text>
+    </View>
+    <View style={styles.summaryCard}>
+      <Text style={styles.summaryLabel}>HIGHEST QUARTER</Text>
+      <Text style={styles.summaryValue}>Q4</Text>
+    </View>
+    <View style={styles.summaryCard}>
+      <Text style={styles.summaryLabel}>TREND DIRECTION</Text>
+      <View style={styles.trendDirection}>
+        <View style={styles.trendDot} />
+        <Text style={styles.trendText}>Stable</Text>
+      </View>
+    </View>
+  </View>
+
+ <View style={styles.chartContainer}>
+    <LineChart
+      areaChart
+      curved={false}
+      data={[
+        { value: 85, label: 'Q1' },
+        { value: 88, label: 'Q2' },
+        { value: 86, label: 'Q3' },
+        { value: 91, label: 'Q4' },
+      ]}
+      height={240}
+      width={340}
+      disableScroll={true}           
+      scrollEnabled={false}
+      
+      color="#9333EA"
+      thickness={5}
+      startFillColor="#9333EA"
+      endFillColor="#E9D5FF"
+      startOpacity={0.4}
+      endOpacity={0.1}
+
+      hideDataPoints={false}
+      dataPointsColor="#9333EA"
+      dataPointsRadius={10}
+
+          minValue={60}
+        maxValue={100}
+        stepValue={10}
+        noOfSections={4}                
+       adjustToFitYRange={true}
+      
+        yAxisLabelWidth={40}
+        yAxisTextStyle={{ color: '#94A3B8', fontSize: 11 }}
+        yAxisSide="left"
+        yAxisThickness={0}
+
+
+
+      xAxisThickness={0}
+      xAxisLabelTextStyle={{ color: '#374151', fontSize: 10, fontWeight: '600' }}
+
+      hideRules
+
+      initialSpacing={10}
+      spacing={72}
+      endSpacing={70}
+
+      pointerConfig={{
+        pointerStripWidth: 3,
+        pointerStripColor: '#9333EA',
+        pointerColor: '#9333EA',
+        radius: 10,
+        pointerLabelWidth: 60,
+        pointerLabelHeight: 50,
+        activatePointersOnLongPress: true,
+        pointerLabelComponent: (items) => (
+          <View style={styles.pointerLabel}>
+            <Text style={styles.pointerQuarter}>{items[0].label}</Text>
+            <Text style={styles.pointerValue}>{items[0].value}</Text>
           </View>
-          <View style={styles.chartContainer}>
-            <View style={styles.yAxis}>
-              <Text style={styles.yAxisLabel}>100</Text>
-              <Text style={styles.yAxisLabel}>90</Text>
-              <Text style={styles.yAxisLabel}>80</Text>
-              <Text style={styles.yAxisLabel}>70</Text>
-              <Text style={styles.yAxisLabel}>60</Text>
-            </View>
-            <View style={styles.chartArea}>
-              {/* Simple line chart visualization */}
-              <View style={styles.gridLines}>
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <View key={i} style={styles.gridLine} />
-                ))}
-              </View>
-              <View style={styles.dataPoints}>
-                {gradeData.map((point, index) => (
-                  <View key={index} style={styles.dataPointContainer}>
-                    <View style={[styles.dataPoint, { bottom: `${point.value}%` }]} />
-                    <Text style={styles.xAxisLabel}>{point.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-        </View>
+        ),
+      }}
+    />
+  </View>
+
+  {/* Quarter Breakdown */}
+  <View style={styles.quarterBreakdown}>
+    <View style={styles.quarterItem}>
+      <Text style={styles.quarterLabel}>Q1</Text>
+      <Text style={styles.quarterGrade}>85</Text>
+    </View>
+    <View style={styles.quarterItem}>
+      <Text style={styles.quarterLabel}>Q2</Text>
+      <Text style={styles.quarterGrade}>88</Text>
+      <Text style={styles.changeText}>+3.0</Text>
+    </View>
+    <View style={styles.quarterItem}>
+      <Text style={styles.quarterLabel}>Q3</Text>
+      <Text style={styles.quarterGrade}>86</Text>
+      <Text style={styles.changeTextDecline}>-2.0</Text>
+    </View>
+    <View style={styles.quarterItem}>
+      <Text style={styles.quarterLabel}>Q4</Text>
+      <Text style={styles.quarterGrade}>91</Text>
+      <Text style={styles.changeTextBest}>+5.0</Text>
+    </View>
+  </View>
+
+  {/* Summary */}
+  <View style={styles.summaryNote}>
+    <Text style={styles.summaryNoteText}>
+      Your overall average is 87.5. Your grades remain consistent throughout the quarters. Your best performance was in Q4 with a grade of 91.
+    </Text>
+  </View>
+</View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -661,79 +752,96 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-  trendSection: {
-    backgroundColor: '#fff',
+ trendSection: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
+    padding: 20,
+    marginBottom: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
   },
   trendHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
+    gap: 10,
+    marginBottom: 6,
   },
-  trendIcon: {
-    fontSize: 20,
-  },
-  trendTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#E91E63',
-  },
-  chartContainer: {
-    flexDirection: 'row',
-    height: 200,
-  },
-  yAxis: {
-    width: 40,
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-  },
-  yAxisLabel: {
-    fontSize: 10,
-    color: '#999',
-  },
-  chartArea: {
+  trendIcon: { fontSize: 22 },
+  trendTitle: { fontSize: 17, fontWeight: 'bold', color: '#E91E63' },
+  trendSubtitle: { fontSize: 12, color: '#6B7280', textAlign: 'center', marginBottom: 16 },
+  summaryRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  summaryCard: {
     flex: 1,
-    position: 'relative',
-  },
-  gridLines: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-  },
-  gridLine: {
-    height: 1,
-    backgroundColor: '#f0f0f0',
-  },
-  dataPoints: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    height: '100%',
-    paddingTop: 10,
-  },
-  dataPointContainer: {
-    flex: 1,
+    backgroundColor: '#F9FAFB',
+    padding: 12,
+    borderRadius: 14,
     alignItems: 'center',
-    position: 'relative',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  dataPoint: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#E91E63',
-    position: 'absolute',
+  summaryLabel: { fontSize: 10, color: '#6B7280', fontWeight: '600', marginBottom: 4 },
+  summaryValue: { fontSize: 19, fontWeight: 'bold', color: '#111827' },
+  avgTag: {
+    fontSize: 9,
+    backgroundColor: '#10B981',
+    color: 'white',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 6,
+    fontWeight: 'bold',
   },
-  xAxisLabel: {
-    fontSize: 10,
-    color: '#999',
-    position: 'absolute',
-    bottom: -20,
+  trendDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#10B981' },
+  trendText: { color: '#10B981', fontWeight: 'bold', fontSize: 14 },
+  trendDirection: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+
+  chartContainer: {
+    alignItems: 'left',
+    justifyContent: 'center',
+    backgroundColor: '#FCFCFD',
+    borderRadius: 16,
+    paddingVertical: 0,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+
+  pointerLabel: {
+    backgroundColor: '#1E1B4B',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 90,
+    alignItems: 'center',
+  },
+  pointerQuarter: { color: '#C4B5FD', fontSize: 12, fontWeight: 'bold' },
+  pointerValue: { color: '#FFFFFF', fontSize: 22, fontWeight: 'bold' },
+
+  quarterBreakdown: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 16 },
+  quarterItem: { alignItems: 'center' },
+  quarterLabel: { color: '#64748B', fontSize: 12, marginBottom: 4 },
+  quarterGrade: { fontSize: 23, fontWeight: 'bold', color: '#111827' },
+  changeText: { color: '#10B981', fontSize: 11, fontWeight: '600', marginTop: 2 },
+  changeTextDecline: { color: '#EF4444', fontSize: 11, fontWeight: '600', marginTop: 2 },
+  changeTextBest: { color: '#10B981', fontSize: 12, fontWeight: '700', marginTop: 2 },
+
+  summaryNote: {
+    backgroundColor: '#F0FDF4',
+    padding: 16,
+    borderRadius: 14,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  summaryNoteText: {
+    color: '#166534',
+    fontSize: 13.5,
+    lineHeight: 20,
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });
 

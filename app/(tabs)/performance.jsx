@@ -85,7 +85,7 @@ const AcademicTracker = () => {
             <Text style={styles.statLabel}>Passing Subjects</Text>
             <Text style={[styles.statValue, { color: '#9C27B0' }]}>{stats.passed} / {stats.total}</Text>
             </View>
-git         </View>
+           </View>
 
         {/* Filters */}
         <View style={styles.filterContainer}>
