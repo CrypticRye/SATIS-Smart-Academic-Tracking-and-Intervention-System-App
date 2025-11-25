@@ -4,10 +4,10 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
+  StyleSheet
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, ChevronDown, ChevronUp, FileDown } from 'lucide-react-native';
 import { LineChart } from 'react-native-gifted-charts';
 import * as Print from 'expo-print';
@@ -123,12 +123,6 @@ const SubjectDetail = () => {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color="#1A1A1A" />
         </TouchableOpacity>
-        <View style={styles.headerRight}>
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationText}>Bell</Text>
-          </View>
-          <View style={styles.avatar} />
-        </View>
       </View>
 
       <ScrollView style={styles.scrollView}>
@@ -141,7 +135,7 @@ const SubjectDetail = () => {
               <View style={styles.subjectHeader}>
                 <Text style={styles.subjectTitle}>{subjectName}</Text>
                 <View style={styles.finalGradeBadge}>
-                  <Text style={styles.finalGradeLabel}>Final Grade</Text>
+                  <Text style={styles.finalGradeLabel}>Expected Grade</Text>
                   <Text style={styles.finalGradeValue}>{grade}</Text>
                   <Text style={styles.finalGradeTotal}>/100</Text>
                 </View>

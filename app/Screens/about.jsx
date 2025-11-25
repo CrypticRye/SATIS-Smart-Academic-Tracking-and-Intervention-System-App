@@ -11,23 +11,28 @@ const SupportScreen = () => {
       icon: '?',
       iconBg: '#6B9FFF',
       title: 'How do I check my attendance?',
-      description: 'Go to the Attendance section in the sidebar to view your attendance records and statistics.'
+      description: 'Go to the Attendance section in the sidebar to view your attendance records and statistics.',
+      route: '/attendance',
     },
     {
       id: 2,
       icon: '?',
       iconBg: '#A78BFA',
       title: 'Where can I see my grades?',
-      description: 'Navigate to the term and analytics section to view your grades, progress, and academic performance.'
+      description: 'Navigate to the term and analytics section to view your grades, progress, and academic performance.',
+      route: '/performance',
     },
     {
       id: 3,
       icon: '?',
       iconBg: '#86EFAC',
       title: 'How do I contact my teacher?',
-      description: 'Go to the Information & Feedback section to communicate with your teachers and receive updates.'
+      description: 'Go to the Information & Feedback section to communicate with your teachers and receive updates.',
+      route: '/intervention',
     }
   ];
+
+  const router = useRouter();
 
   const contactOptions = [
     {
@@ -70,7 +75,7 @@ const SupportScreen = () => {
         <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
         
         {faqItems.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.faqCard}>
+          <TouchableOpacity key={item.id} style={styles.faqCard} onPress={() => router.push(item.route)}>
             <View style={[styles.faqIcon, { backgroundColor: item.iconBg }]}>
               <Text style={styles.faqIconText}>{item.icon}</Text>
             </View>

@@ -26,19 +26,21 @@ export default function AttendanceDashboard() {
   const [showPercentage, setShowPercentage] = useState(true);
 
   // Sample events data PWEDE lang mag add aslong as sundan format
-  const events = {
-    // Format: YYYY-M-D
-    [`${currentYear}-${currentMonth}-21`]: [
-      { type: 'assignment', title: 'Earth and life Assignment Due', status: 'pending' },
-      { type: 'exam', title: 'Machine Learning Quiz', status: 'pending' },
-    ],
-    [`${currentYear}-${currentMonth}-25`]: [
-      { type: 'project', title: 'Software Engineering Presentation', status: 'pending' },
-    ],
-    [`${currentYear}-${currentMonth}-15`]: [
-      { type: 'assignment', title: 'English Submitted', status: 'completed' },
-    ],
-  };
+  // const events = {
+  //   // Format: YYYY-M-D
+  //   [`${currentYear}-${currentMonth}-21`]: [
+  //     { type: 'assignment', title: 'Earth and life Assignment Due', status: 'pending' },
+  //     { type: 'exam', title: 'Machine Learning Quiz', status: 'pending' },
+  //   ],
+  //   [`${currentYear}-${currentMonth}-25`]: [
+  //     { type: 'project', title: 'Software Engineering Presentation', status: 'pending' },
+  //   ],
+  //   [`${currentYear}-${currentMonth}-15`]: [
+  //     { type: 'assignment', title: 'English Submitted', status: 'completed' },
+  //   ],
+  // };
+  // No calendar events defined by default. Add entries using the format: 'YYYY-M-D': [{ type, title, status }]
+  const events = {};
 
   // Get events for selected date on calendar
   const selectedEvents = events[`${currentYear}-${currentMonth}-${selectedDate}`] || [];
@@ -477,7 +479,6 @@ scrollContent: {
     marginTop: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
   },
   weekDayCell: { alignItems: 'center' },
   weekDayText: { fontSize: 12, color: '#6b7280' },
@@ -485,7 +486,7 @@ scrollContent: {
   calendarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     gap: 8,
   },
   calendarCell: {

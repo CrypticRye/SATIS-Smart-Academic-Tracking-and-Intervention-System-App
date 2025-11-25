@@ -447,7 +447,6 @@ scrollContent: {
     paddingVertical: 20,
     marginBottom: 16,
     flexDirection: 'row',
-    marginBottom: 16,
     flexWrap: 'wrap',
     width: '100%',
    

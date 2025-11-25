@@ -112,7 +112,7 @@ function Mainmenu() {
                 }}
               >
                 <Ionicons name="information-circle-outline" size={24} color="#1f2937" />
-                <Text style={styles.drawerItemText}>About Us</Text>
+                <Text style={styles.drawerItemText}>Learn More</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

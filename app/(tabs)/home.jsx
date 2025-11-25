@@ -30,23 +30,6 @@ export default function Home() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Ionicons
-            name="search"
-            size={20}
-            color="#9ca3af"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            placeholder="Search"
-            placeholderTextColor="#9ca3af"
-            style={styles.searchInput}
-          />
-          <TouchableOpacity style={styles.bellIcon}>
-            <Ionicons name="notifications-outline" size={24} color="#1f2937" />
-          </TouchableOpacity>
-        </View>
 
         {/* Welcome Card */}
         <ImageBackground

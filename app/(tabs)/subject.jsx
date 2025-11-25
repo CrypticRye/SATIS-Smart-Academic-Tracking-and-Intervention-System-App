@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -12,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Mainmenu from '../components/mainMenu';
 
 export default function SubjectRisk() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [showAll, setShowAll] = useState(false);
@@ -329,42 +331,20 @@ export default function SubjectRisk() {
                     </View>
                   </View>
 
-                  <TouchableOpacity style={styles.interventionButton}>
+                  <TouchableOpacity
+                    style={styles.interventionButton}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setSelectedSubject(null);
+                      router.push('/intervention');
+                    }}
+                  >
                     <Text style={styles.interventionButtonText}>Go to Intervention Page</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.contactButton}>
-                    <Text style={styles.contactButtonText}>Contact Instructor</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
-              {/* Resources Cards */}
-              <View style={styles.resourceCard}>
-                <View style={styles.resourceIconBox}>
-                  <Text style={{ fontSize: 24 }}>📚</Text>
-                </View>
-                <View style={styles.resourceContent}>
-                  <Text style={styles.resourceTitle}>Study Resources</Text>
-                  <Text style={styles.resourceDesc}>Access course materials, notes, and practice problems</Text>
-                  <TouchableOpacity>
-                    <Text style={styles.resourceLink}>View Resources →</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.resourceCard}>
-                <View style={styles.resourceIconBox}>
-                  <Text style={{ fontSize: 24 }}>📝</Text>
-                </View>
-                <View style={styles.resourceContent}>
-                  <Text style={styles.resourceTitle}>Assignments</Text>
-                  <Text style={styles.resourceDesc}>View pending assignments and deadlines</Text>
-                  <TouchableOpacity>
-                    <Text style={styles.resourceLink}>View Assignments →</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              
 
               <View style={{ height: 40 }} />
             </ScrollView>
@@ -683,7 +663,7 @@ const styles = StyleSheet.create({
   filterRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 20,
+    gap: 3,
     marginBottom: 16,
   },
   filterButton: {
