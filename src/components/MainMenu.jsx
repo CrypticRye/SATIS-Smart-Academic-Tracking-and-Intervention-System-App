@@ -29,10 +29,20 @@ import { useAuth } from "../context/AuthContext";
 import SchoolLogo from "@assets/school-logo.png";
 import SatisLogo from "@assets/satis-logo.png";
 
+const firstNonEmpty = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === "string" && value.trim() === "") continue;
+    return value;
+  }
+
+  return null;
+};
+
 function Mainmenu() {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const width = Dimensions.get("window").width;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -77,20 +87,143 @@ function Mainmenu() {
   ];
 
   useEffect(() => {
+    let isMounted = true;
+
+    const resolveAuthFallback = () => ({
+      firstName: firstNonEmpty(user?.firstName, user?.first_name),
+      middleName: firstNonEmpty(user?.middleName, user?.middle_name),
+      lastName: firstNonEmpty(user?.lastName, user?.last_name),
+      fullName: firstNonEmpty(user?.name),
+      displayName: firstNonEmpty(user?.name),
+      email: firstNonEmpty(user?.email),
+    });
+
     const fetchStudentData = async () => {
+      let dashboardStudent = null;
+      let profileStudent = null;
+      let profileUser = null;
+
       try {
         const res = await axios.get("/student/dashboard");
-        setStudentData(res.data?.student || null);
+        dashboardStudent = res.data?.student || null;
       } catch (err) {
         console.warn(
           "MainMenu: Failed to fetch student data",
           err?.response || err,
         );
       }
+
+      const shouldFetchProfile =
+        firstNonEmpty(
+          dashboardStudent?.firstName,
+          dashboardStudent?.first_name,
+          dashboardStudent?.fullName,
+          dashboardStudent?.full_name,
+          dashboardStudent?.displayName,
+          dashboardStudent?.studentName,
+          dashboardStudent?.student_name,
+        ) === null ||
+        firstNonEmpty(
+          dashboardStudent?.gradeLevel,
+          dashboardStudent?.grade_level,
+          dashboardStudent?.section,
+        ) === null;
+
+      if (shouldFetchProfile) {
+        try {
+          const profileRes = await axios.get("/student/profile");
+          profileStudent = profileRes.data?.student || null;
+          profileUser = profileRes.data?.user || null;
+        } catch (profileErr) {
+          console.warn(
+            "MainMenu: Failed to fetch profile fallback",
+            profileErr?.response || profileErr,
+          );
+        }
+      }
+
+      const mergedStudent = {
+        ...(dashboardStudent || {}),
+        ...(profileStudent || {}),
+        firstName: firstNonEmpty(
+          dashboardStudent?.firstName,
+          dashboardStudent?.first_name,
+          profileStudent?.firstName,
+          profileStudent?.first_name,
+          profileUser?.firstName,
+          profileUser?.first_name,
+          user?.firstName,
+          user?.first_name,
+        ),
+        middleName: firstNonEmpty(
+          dashboardStudent?.middleName,
+          dashboardStudent?.middle_name,
+          dashboardStudent?.middleInitial,
+          dashboardStudent?.middle_initial,
+          profileStudent?.middleName,
+          profileStudent?.middle_name,
+          profileUser?.middleName,
+          profileUser?.middle_name,
+          user?.middleName,
+          user?.middle_name,
+        ),
+        lastName: firstNonEmpty(
+          dashboardStudent?.lastName,
+          dashboardStudent?.last_name,
+          profileStudent?.lastName,
+          profileStudent?.last_name,
+          profileUser?.lastName,
+          profileUser?.last_name,
+          user?.lastName,
+          user?.last_name,
+        ),
+        fullName: firstNonEmpty(
+          dashboardStudent?.fullName,
+          dashboardStudent?.full_name,
+          dashboardStudent?.displayName,
+          dashboardStudent?.studentName,
+          dashboardStudent?.student_name,
+          profileStudent?.studentName,
+          profileStudent?.student_name,
+          profileUser?.name,
+          user?.name,
+        ),
+        displayName: firstNonEmpty(
+          dashboardStudent?.displayName,
+          profileStudent?.studentName,
+          profileStudent?.student_name,
+          profileUser?.name,
+          user?.name,
+        ),
+      };
+
+      const hasIdentity =
+        firstNonEmpty(
+          mergedStudent?.firstName,
+          mergedStudent?.lastName,
+          mergedStudent?.fullName,
+          mergedStudent?.displayName,
+        ) !== null;
+
+      if (!isMounted) return;
+      setStudentData(hasIdentity ? mergedStudent : resolveAuthFallback());
     };
 
     fetchStudentData();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    user?.email,
+    user?.firstName,
+    user?.first_name,
+    user?.lastName,
+    user?.last_name,
+    user?.middleName,
+    user?.middle_name,
+    user?.name,
+  ]);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -124,20 +257,50 @@ function Mainmenu() {
   }, [drawerOpen, drawerTranslateX, drawerBackdropOpacity, width]);
 
   const getInitials = () => {
-    let firstName = (studentData?.firstName || "").trim();
-    let middleName = (
-      studentData?.middleInitial ||
-      studentData?.middleName ||
-      studentData?.middle_name ||
-      ""
+    let firstName = String(
+      firstNonEmpty(
+        studentData?.firstName,
+        studentData?.first_name,
+        user?.firstName,
+        user?.first_name,
+        "",
+      ),
     ).trim();
-    let lastName = (studentData?.lastName || "").trim();
 
-    const fallbackName = (
-      studentData?.fullName ||
-      studentData?.displayName ||
-      ""
+    let middleName = String(
+      firstNonEmpty(
+        studentData?.middleInitial,
+        studentData?.middle_initial,
+        studentData?.middleName,
+        studentData?.middle_name,
+        user?.middleName,
+        user?.middle_name,
+        "",
+      ),
     ).trim();
+
+    let lastName = String(
+      firstNonEmpty(
+        studentData?.lastName,
+        studentData?.last_name,
+        user?.lastName,
+        user?.last_name,
+        "",
+      ),
+    ).trim();
+
+    const fallbackName = String(
+      firstNonEmpty(
+        studentData?.fullName,
+        studentData?.full_name,
+        studentData?.displayName,
+        studentData?.studentName,
+        studentData?.student_name,
+        user?.name,
+        "",
+      ),
+    ).trim();
+
     if ((!firstName || !lastName || !middleName) && fallbackName) {
       const parts = fallbackName.split(/\s+/).filter(Boolean);
       if (!firstName && parts.length > 0) firstName = parts[0];
@@ -153,20 +316,50 @@ function Mainmenu() {
   };
 
   const getFullName = () => {
-    let firstName = (studentData?.firstName || "").trim();
-    let middleName = (
-      studentData?.middleInitial ||
-      studentData?.middleName ||
-      studentData?.middle_name ||
-      ""
+    let firstName = String(
+      firstNonEmpty(
+        studentData?.firstName,
+        studentData?.first_name,
+        user?.firstName,
+        user?.first_name,
+        "",
+      ),
     ).trim();
-    let lastName = (studentData?.lastName || "").trim();
 
-    const fallbackName = (
-      studentData?.fullName ||
-      studentData?.displayName ||
-      ""
+    let middleName = String(
+      firstNonEmpty(
+        studentData?.middleInitial,
+        studentData?.middle_initial,
+        studentData?.middleName,
+        studentData?.middle_name,
+        user?.middleName,
+        user?.middle_name,
+        "",
+      ),
     ).trim();
+
+    let lastName = String(
+      firstNonEmpty(
+        studentData?.lastName,
+        studentData?.last_name,
+        user?.lastName,
+        user?.last_name,
+        "",
+      ),
+    ).trim();
+
+    const fallbackName = String(
+      firstNonEmpty(
+        studentData?.fullName,
+        studentData?.full_name,
+        studentData?.displayName,
+        studentData?.studentName,
+        studentData?.student_name,
+        user?.name,
+        "",
+      ),
+    ).trim();
+
     if ((!firstName || !lastName || !middleName) && fallbackName) {
       const parts = fallbackName.split(/\s+/).filter(Boolean);
       if (!firstName && parts.length > 0) firstName = parts[0];

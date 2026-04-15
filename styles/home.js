@@ -43,6 +43,12 @@ export default StyleSheet.create({
     fontSize: 14,
     color: "rgba(255,255,255,0.9)",
   },
+  welcomeMeta: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.86)",
+    fontWeight: "600",
+  },
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

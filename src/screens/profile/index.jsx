@@ -34,6 +34,37 @@ import {
 import axios from "axios";
 import { useAuth } from "@context/AuthContext";
 
+const firstNonEmpty = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === "string" && value.trim() === "") continue;
+    return value;
+  }
+
+  return null;
+};
+
+const splitName = (value) => {
+  const tokens = String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (tokens.length === 0) {
+    return { firstName: "", middleName: "", lastName: "" };
+  }
+
+  if (tokens.length === 1) {
+    return { firstName: tokens[0], middleName: "", lastName: "" };
+  }
+
+  return {
+    firstName: tokens[0],
+    middleName: tokens.length > 2 ? tokens.slice(1, -1).join(" ") : "",
+    lastName: tokens[tokens.length - 1],
+  };
+};
+
 // --- Info Display Field Component (Read-only) ---
 const InfoField = ({ label, value, icon: Icon }) => (
   <View style={styles.infoField}>
@@ -461,11 +492,35 @@ function StudentProfile() {
 
     const nextUser = data.user || {};
     const nextStudent = data.student || {};
+    const splitStudentName = splitName(
+      firstNonEmpty(nextStudent.studentName, nextStudent.student_name),
+    );
 
     setProfileForm({
-      firstName: nextStudent.firstName || nextUser.firstName || "",
-      middleName: nextStudent.middleName || nextUser.middleName || "",
-      lastName: nextStudent.lastName || nextUser.lastName || "",
+      firstName:
+        firstNonEmpty(
+          nextStudent.firstName,
+          nextStudent.first_name,
+          nextUser.firstName,
+          nextUser.first_name,
+          splitStudentName.firstName,
+        ) || "",
+      middleName:
+        firstNonEmpty(
+          nextStudent.middleName,
+          nextStudent.middle_name,
+          nextUser.middleName,
+          nextUser.middle_name,
+          splitStudentName.middleName,
+        ) || "",
+      lastName:
+        firstNonEmpty(
+          nextStudent.lastName,
+          nextStudent.last_name,
+          nextUser.lastName,
+          nextUser.last_name,
+          splitStudentName.lastName,
+        ) || "",
       email: nextUser.email || "",
     });
     setProfileFormErrors({});
@@ -475,20 +530,59 @@ function StudentProfile() {
   const student = data?.student || {};
   const pendingPasswordReset = data?.pendingPasswordReset;
 
+  const studentNameSeed = firstNonEmpty(
+    student.studentName,
+    student.student_name,
+    user.name,
+  );
+  const splitStudentName = splitName(studentNameSeed);
+
+  const studentFirstName = firstNonEmpty(
+    student.firstName,
+    student.first_name,
+    user.firstName,
+    user.first_name,
+    splitStudentName.firstName,
+  );
+
+  const studentMiddleName = firstNonEmpty(
+    student.middleName,
+    student.middle_name,
+    user.middleName,
+    user.middle_name,
+    splitStudentName.middleName,
+  );
+
+  const studentLastName = firstNonEmpty(
+    student.lastName,
+    student.last_name,
+    user.lastName,
+    user.last_name,
+    splitStudentName.lastName,
+  );
+
+  const studentGradeLevel = firstNonEmpty(
+    student.gradeLevel,
+    student.grade_level,
+  );
+  const studentSection = firstNonEmpty(
+    student.section,
+    student.classSection,
+    student.class_section,
+  );
+
   // Get initials - using camelCase from API
   const getInitials = () => {
-    const first = student.firstName?.[0] || "";
-    const last = student.lastName?.[0] || "";
+    const first = studentFirstName?.[0] || "";
+    const last = studentLastName?.[0] || studentMiddleName?.[0] || "";
     return (first + last).toUpperCase() || "ST";
   };
 
   // Get full name
   const getFullName = () => {
-    const parts = [
-      student.firstName,
-      student.middleName,
-      student.lastName,
-    ].filter(Boolean);
+    const parts = [studentFirstName, studentMiddleName, studentLastName].filter(
+      Boolean,
+    );
     return parts.join(" ") || user.name || "Student";
   };
 
@@ -739,16 +833,16 @@ function StudentProfile() {
             <View style={styles.roleBadge}>
               <Text style={styles.roleBadgeText}>Student</Text>
             </View>
-            {student.gradeLevel && (
+            {studentGradeLevel && (
               <View style={styles.gradeBadge}>
                 <Text style={styles.gradeBadgeText}>
-                  Grade {student.gradeLevel}
+                  Grade {studentGradeLevel}
                 </Text>
               </View>
             )}
-            {student.section && (
+            {studentSection && (
               <View style={styles.sectionBadge}>
-                <Text style={styles.sectionBadgeText}>{student.section}</Text>
+                <Text style={styles.sectionBadgeText}>{studentSection}</Text>
               </View>
             )}
           </View>
@@ -763,22 +857,22 @@ function StudentProfile() {
           <View style={styles.infoGrid}>
             <InfoField
               label="First Name"
-              value={student.firstName}
+              value={studentFirstName}
               icon={User}
             />
-            <InfoField label="Last Name" value={student.lastName} icon={User} />
+            <InfoField label="Last Name" value={studentLastName} icon={User} />
             <InfoField
               label="Middle Name"
-              value={student.middleName}
+              value={studentMiddleName}
               icon={User}
             />
             <InfoField label="LRN" value={student.lrn} />
             <InfoField
               label="Grade Level"
-              value={student.gradeLevel ? `Grade ${student.gradeLevel}` : null}
+              value={studentGradeLevel ? `Grade ${studentGradeLevel}` : null}
               icon={BookOpen}
             />
-            <InfoField label="Section" value={student.section} />
+            <InfoField label="Section" value={studentSection} />
             {student.track && <InfoField label="Track" value={student.track} />}
             {student.strand && (
               <InfoField label="Strand" value={student.strand} />

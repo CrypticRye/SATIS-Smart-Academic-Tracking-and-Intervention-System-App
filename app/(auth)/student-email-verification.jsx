@@ -21,11 +21,21 @@ import { useAuth } from "@context/AuthContext";
 import SchoolPicture from "@assets/school.jpg";
 
 const { width, height } = Dimensions.get("window");
+const DEFAULT_RESEND_COOLDOWN_SECONDS = 180;
+
+const formatCountdown = (secondsValue) => {
+  const totalSeconds = Math.max(0, Number(secondsValue) || 0);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+
+  return `${minutes}:${seconds}`;
+};
 
 const StudentEmailVerification = () => {
   const {
     user,
-    sendEmailVerification,
+    sendEmailOtp,
+    verifyEmailOtp,
     refreshEmailVerificationStatus,
     requiresEmailVerification,
     logout,
@@ -34,8 +44,16 @@ const StudentEmailVerification = () => {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
+  const [cooldownSeconds, setCooldownSeconds] = useState(
+    DEFAULT_RESEND_COOLDOWN_SECONDS,
+  );
+  const [otp, setOtp] = useState("");
+
+  const isResendLocked = retryAfterSeconds > 0;
 
   useEffect(() => {
     const fallbackEmail =
@@ -44,14 +62,36 @@ const StudentEmailVerification = () => {
   }, [user?.personal_email, user?.email, user?.username]);
 
   useEffect(() => {
+    if (retryAfterSeconds <= 0) {
+      return undefined;
+    }
+
+    const timerId = setInterval(() => {
+      setRetryAfterSeconds((previousValue) =>
+        previousValue <= 1 ? 0 : previousValue - 1,
+      );
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, [retryAfterSeconds]);
+
+  useEffect(() => {
     const bootstrapStatus = async () => {
       if (!requiresEmailVerification) {
         return;
       }
 
       setRefreshing(true);
-      await refreshEmailVerificationStatus();
+      const result = await refreshEmailVerificationStatus();
       setRefreshing(false);
+
+      const nextCooldown =
+        Number(result?.cooldownSeconds ?? DEFAULT_RESEND_COOLDOWN_SECONDS) ||
+        DEFAULT_RESEND_COOLDOWN_SECONDS;
+      const nextRetryAfter = Number(result?.retryAfterSeconds ?? 0) || 0;
+
+      setCooldownSeconds(nextCooldown);
+      setRetryAfterSeconds(Math.max(0, nextRetryAfter));
     };
 
     bootstrapStatus();
@@ -59,30 +99,53 @@ const StudentEmailVerification = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSendVerification = async () => {
+  const handleSendOtp = async () => {
     setError("");
     setMessage("");
-
+    if (isResendLocked) {
+      setError(
+        `Please wait ${formatCountdown(retryAfterSeconds)} before resending another OTP.`,
+      );
+      return;
+    }
     const normalizedEmail = String(email || "").trim();
-
     if (!normalizedEmail.includes("@")) {
       setError("Please enter a valid personal email.");
       return;
     }
-
     setSending(true);
-    const result = await sendEmailVerification(normalizedEmail);
+    const result = await sendEmailOtp(normalizedEmail);
     setSending(false);
-
+    const nextCooldown =
+      Number(result?.cooldownSeconds ?? DEFAULT_RESEND_COOLDOWN_SECONDS) ||
+      DEFAULT_RESEND_COOLDOWN_SECONDS;
+    const nextRetryAfter = Number(result?.retryAfterSeconds ?? 0) || 0;
+    setCooldownSeconds(nextCooldown);
+    setRetryAfterSeconds(Math.max(0, nextRetryAfter));
     if (!result.success) {
-      setError(result.message || "Failed to send verification email.");
+      setError(result.message || "Failed to send OTP.");
       return;
     }
+    setMessage(result.message || "OTP sent.");
+  };
 
-    setMessage(
-      result.message ||
-        "Verification email sent. Please verify within 30 minutes.",
-    );
+  const handleVerifyOtp = async () => {
+    setError("");
+    setMessage("");
+    if (!otp || otp.length !== 6) {
+      setError("Please enter the 6-digit OTP sent to your email.");
+      return;
+    }
+    setVerifying(true);
+    const result = await verifyEmailOtp(email, otp);
+    setVerifying(false);
+    if (!result.success) {
+      setError(result.message || "Failed to verify OTP.");
+      return;
+    }
+    setMessage(result.message || "Email verified successfully.");
+    setOtp("");
+    // Optionally, trigger refresh or navigation here
   };
 
   const handleRefreshStatus = async () => {
@@ -94,6 +157,14 @@ const StudentEmailVerification = () => {
 
     setRefreshing(false);
 
+    const nextCooldown =
+      Number(result?.cooldownSeconds ?? DEFAULT_RESEND_COOLDOWN_SECONDS) ||
+      DEFAULT_RESEND_COOLDOWN_SECONDS;
+    const nextRetryAfter = Number(result?.retryAfterSeconds ?? 0) || 0;
+
+    setCooldownSeconds(nextCooldown);
+    setRetryAfterSeconds(Math.max(0, nextRetryAfter));
+
     if (!result.success) {
       setError(result.message || "Failed to refresh verification status.");
       return;
@@ -101,7 +172,11 @@ const StudentEmailVerification = () => {
 
     if (result.requiresEmailVerification) {
       setMessage(
-        "Email is not verified yet. Open your inbox and tap the verification link.",
+        nextRetryAfter > 0
+          ? `Email is not verified yet. Open your inbox and tap the verification link. You can resend again in ${formatCountdown(
+              nextRetryAfter,
+            )}.`
+          : "Email is not verified yet. Open your inbox and tap the verification link.",
       );
     } else {
       setMessage("Email verified successfully. Redirecting...");
@@ -126,8 +201,10 @@ const StudentEmailVerification = () => {
 
           <Text style={styles.title}>Verify Personal Email</Text>
           <Text style={styles.subtitle}>
-            Enter your personal email and verify it to continue. Verification
-            links expire in 30 minutes.
+            Enter your personal email and request a 6-digit OTP to continue. OTP
+            expires in 6 minutes. You can resend every{" "}
+            {Math.max(1, Math.ceil(cooldownSeconds / 60))} minute
+            {Math.max(1, Math.ceil(cooldownSeconds / 60)) === 1 ? "" : "s"}.
           </Text>
 
           <View style={styles.inputGroup}>
@@ -156,9 +233,12 @@ const StudentEmailVerification = () => {
           ) : null}
 
           <TouchableOpacity
-            style={[styles.primaryButton, sending && styles.disabledButton]}
-            onPress={handleSendVerification}
-            disabled={sending}
+            style={[
+              styles.primaryButton,
+              (sending || isResendLocked) && styles.disabledButton,
+            ]}
+            onPress={handleSendOtp}
+            disabled={sending || isResendLocked}
             activeOpacity={0.85}
           >
             {sending ? (
@@ -167,11 +247,49 @@ const StudentEmailVerification = () => {
               <>
                 <Send size={16} color="#fff" />
                 <Text style={styles.primaryButtonText}>
-                  Send Verification Email
+                  {isResendLocked
+                    ? `Resend In ${formatCountdown(retryAfterSeconds)}`
+                    : "Send OTP"}
                 </Text>
               </>
             )}
           </TouchableOpacity>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Enter 6-digit OTP</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="123456"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="number-pad"
+                maxLength={6}
+                value={otp}
+                onChangeText={setOtp}
+              />
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.primaryButton, verifying && styles.disabledButton]}
+            onPress={handleVerifyOtp}
+            disabled={verifying}
+            activeOpacity={0.85}
+          >
+            {verifying ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <>
+                <CheckCircle size={16} color="#fff" />
+                <Text style={styles.primaryButtonText}>Verify OTP</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {isResendLocked ? (
+            <Text style={styles.cooldownHint}>
+              Resend becomes available in {formatCountdown(retryAfterSeconds)}.
+            </Text>
+          ) : null}
 
           <TouchableOpacity
             style={[
@@ -364,6 +482,12 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.7,
+  },
+  cooldownHint: {
+    marginTop: 8,
+    textAlign: "center",
+    color: "#92400E",
+    fontSize: 12,
   },
 });
 

@@ -19,6 +19,7 @@ import { useRouter } from "expo-router";
 import Mainmenu from "../../src/components/MainMenu";
 import styles from "@styles/home";
 import axios from "axios";
+import { useAuth } from "@context/AuthContext";
 import SubjectCard from "../../src/components/SubjectCard";
 import NotificationItem from "../../src/components/NotificationItem";
 import MiniChart from "../../src/components/MiniChart";
@@ -39,8 +40,47 @@ const normalizeList = (value) => {
   return [];
 };
 
+const firstNonEmpty = (...values) => {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === "string" && value.trim() === "") continue;
+    return value;
+  }
+
+  return null;
+};
+
+const toNumberOrNull = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const splitName = (value) => {
+  const tokens = String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (tokens.length === 0) {
+    return { firstName: "", middleName: "", lastName: "" };
+  }
+
+  if (tokens.length === 1) {
+    return { firstName: tokens[0], middleName: "", lastName: "" };
+  }
+
+  return {
+    firstName: tokens[0],
+    middleName: tokens.length > 2 ? tokens.slice(1, -1).join(" ") : "",
+    lastName: tokens[tokens.length - 1],
+  };
+};
+
 export default function Home() {
   const router = useRouter();
+  const { user } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,60 +89,286 @@ export default function Home() {
   const [selectedSemester, setSelectedSemester] = useState(null);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
 
-  const fetchDashboard = useCallback(async (semester = null) => {
-    try {
+  const fetchDashboard = useCallback(
+    async (semester = null) => {
       const params = semester ? { semester } : {};
-      const res = await axios.get(`/student/dashboard`, { params });
-      let dashboardData = res.data || {};
-      let dashboardSubjects = normalizeList(dashboardData?.subjectPerformance);
+      setError(null);
 
-      // Fallback: if dashboard response has no subject cards, use performance endpoint
-      // so subject tiles still render for students with valid enrollments.
-      if (dashboardSubjects.length === 0) {
+      let dashboardData = null;
+      let performanceData = null;
+      let profileData = null;
+
+      try {
+        const res = await axios.get(`/student/dashboard`, { params });
+        dashboardData = res.data || {};
+      } catch (err) {
+        console.warn("Home: failed to load dashboard", err?.response || err);
+      }
+
+      const dashboardSubjects = normalizeList(
+        dashboardData?.subjectPerformance,
+      );
+      const needsPerformanceFallback =
+        dashboardData === null ||
+        dashboardSubjects.length === 0 ||
+        firstNonEmpty(
+          dashboardData?.stats?.overallGrade,
+          dashboardData?.stats?.overall_grade,
+        ) === null;
+
+      if (needsPerformanceFallback) {
         try {
           const perfRes = await axios.get(`/student/performance`, { params });
-          const perfSubjects = normalizeList(perfRes.data?.subjectPerformance);
-
-          if (perfSubjects.length > 0) {
-            dashboardSubjects = perfSubjects;
-            dashboardData = {
-              ...dashboardData,
-              subjectPerformance: perfSubjects,
-              stats: {
-                ...(dashboardData?.stats || {}),
-                totalSubjects:
-                  (dashboardData?.stats?.totalSubjects || 0) > 0
-                    ? dashboardData.stats.totalSubjects
-                    : (perfRes.data?.stats?.totalSubjects ??
-                      perfSubjects.length),
-              },
-            };
-          }
+          performanceData = perfRes.data || {};
         } catch (fallbackErr) {
           console.warn(
-            "Home: subjectPerformance fallback failed",
+            "Home: performance fallback failed",
             fallbackErr?.response || fallbackErr,
           );
         }
       }
 
-      if (!Array.isArray(dashboardData?.subjectPerformance)) {
-        dashboardData = {
-          ...dashboardData,
-          subjectPerformance: dashboardSubjects,
-        };
+      const candidateStudent = {
+        ...(dashboardData?.student || {}),
+        ...(performanceData?.student || {}),
+      };
+
+      const hasName =
+        firstNonEmpty(
+          candidateStudent?.firstName,
+          candidateStudent?.first_name,
+          candidateStudent?.fullName,
+          candidateStudent?.full_name,
+          candidateStudent?.displayName,
+          candidateStudent?.studentName,
+          candidateStudent?.student_name,
+        ) !== null;
+
+      const hasClassInfo =
+        firstNonEmpty(
+          candidateStudent?.gradeLevel,
+          candidateStudent?.grade_level,
+          candidateStudent?.section,
+          candidateStudent?.classSection,
+          candidateStudent?.class_section,
+        ) !== null;
+
+      if (!hasName || !hasClassInfo) {
+        try {
+          const profileRes = await axios.get(`/student/profile`);
+          profileData = profileRes.data || {};
+        } catch (profileErr) {
+          console.warn(
+            "Home: profile fallback failed",
+            profileErr?.response || profileErr,
+          );
+        }
       }
 
-      setData(dashboardData);
-      // Set initial semester from response if not already set
-      if (semester === null && dashboardData?.semesters?.selected) {
-        setSelectedSemester(dashboardData.semesters.selected);
+      const mergedNameSeed = firstNonEmpty(
+        dashboardData?.student?.fullName,
+        dashboardData?.student?.full_name,
+        dashboardData?.student?.displayName,
+        dashboardData?.student?.studentName,
+        dashboardData?.student?.student_name,
+        performanceData?.student?.fullName,
+        performanceData?.student?.full_name,
+        performanceData?.student?.displayName,
+        performanceData?.student?.studentName,
+        performanceData?.student?.student_name,
+        profileData?.student?.studentName,
+        profileData?.student?.student_name,
+        profileData?.user?.name,
+        user?.name,
+      );
+
+      const splitMergedName = splitName(mergedNameSeed);
+
+      const mergedStudent = {
+        ...(dashboardData?.student || {}),
+        ...(performanceData?.student || {}),
+        ...(profileData?.student || {}),
+        id: firstNonEmpty(
+          dashboardData?.student?.id,
+          performanceData?.student?.id,
+          profileData?.student?.id,
+        ),
+        firstName: firstNonEmpty(
+          dashboardData?.student?.firstName,
+          dashboardData?.student?.first_name,
+          performanceData?.student?.firstName,
+          performanceData?.student?.first_name,
+          profileData?.student?.firstName,
+          profileData?.student?.first_name,
+          profileData?.user?.firstName,
+          profileData?.user?.first_name,
+          user?.firstName,
+          user?.first_name,
+          splitMergedName.firstName,
+        ),
+        middleName: firstNonEmpty(
+          dashboardData?.student?.middleName,
+          dashboardData?.student?.middle_name,
+          performanceData?.student?.middleName,
+          performanceData?.student?.middle_name,
+          profileData?.student?.middleName,
+          profileData?.student?.middle_name,
+          profileData?.user?.middleName,
+          profileData?.user?.middle_name,
+          user?.middleName,
+          user?.middle_name,
+          splitMergedName.middleName,
+        ),
+        lastName: firstNonEmpty(
+          dashboardData?.student?.lastName,
+          dashboardData?.student?.last_name,
+          performanceData?.student?.lastName,
+          performanceData?.student?.last_name,
+          profileData?.student?.lastName,
+          profileData?.student?.last_name,
+          profileData?.user?.lastName,
+          profileData?.user?.last_name,
+          user?.lastName,
+          user?.last_name,
+          splitMergedName.lastName,
+        ),
+        fullName: firstNonEmpty(
+          dashboardData?.student?.fullName,
+          dashboardData?.student?.full_name,
+          performanceData?.student?.fullName,
+          performanceData?.student?.full_name,
+          profileData?.user?.name,
+          mergedNameSeed,
+        ),
+        displayName: firstNonEmpty(
+          dashboardData?.student?.displayName,
+          performanceData?.student?.displayName,
+          profileData?.student?.studentName,
+          profileData?.student?.student_name,
+          mergedNameSeed,
+        ),
+        studentName: firstNonEmpty(
+          dashboardData?.student?.studentName,
+          dashboardData?.student?.student_name,
+          performanceData?.student?.studentName,
+          performanceData?.student?.student_name,
+          profileData?.student?.studentName,
+          profileData?.student?.student_name,
+          mergedNameSeed,
+        ),
+        email: firstNonEmpty(
+          dashboardData?.student?.email,
+          performanceData?.student?.email,
+          profileData?.user?.email,
+          user?.email,
+        ),
+        gradeLevel: firstNonEmpty(
+          dashboardData?.student?.gradeLevel,
+          dashboardData?.student?.grade_level,
+          performanceData?.student?.gradeLevel,
+          performanceData?.student?.grade_level,
+          profileData?.student?.gradeLevel,
+          profileData?.student?.grade_level,
+        ),
+        section: firstNonEmpty(
+          dashboardData?.student?.section,
+          dashboardData?.student?.classSection,
+          dashboardData?.student?.class_section,
+          performanceData?.student?.section,
+          performanceData?.student?.classSection,
+          performanceData?.student?.class_section,
+          profileData?.student?.section,
+          profileData?.student?.classSection,
+          profileData?.student?.class_section,
+        ),
+        strand: firstNonEmpty(
+          dashboardData?.student?.strand,
+          performanceData?.student?.strand,
+          profileData?.student?.strand,
+        ),
+        track: firstNonEmpty(
+          dashboardData?.student?.track,
+          performanceData?.student?.track,
+          profileData?.student?.track,
+        ),
+        lrn: firstNonEmpty(
+          dashboardData?.student?.lrn,
+          performanceData?.student?.lrn,
+          profileData?.student?.lrn,
+        ),
+      };
+
+      const mergedStats = {
+        ...(performanceData?.stats || {}),
+        ...(dashboardData?.stats || {}),
+        overallGrade: firstNonEmpty(
+          dashboardData?.stats?.overallGrade,
+          dashboardData?.stats?.overall_grade,
+          performanceData?.stats?.overallGrade,
+          performanceData?.stats?.overall_grade,
+        ),
+        overallAttendance: firstNonEmpty(
+          dashboardData?.stats?.overallAttendance,
+          dashboardData?.stats?.overall_attendance,
+          performanceData?.stats?.overallAttendance,
+          performanceData?.stats?.overall_attendance,
+        ),
+        totalSubjects: firstNonEmpty(
+          dashboardData?.stats?.totalSubjects,
+          dashboardData?.stats?.total_subjects,
+          performanceData?.stats?.totalSubjects,
+          performanceData?.stats?.total_subjects,
+          normalizeList(performanceData?.subjectPerformance).length || null,
+          normalizeList(dashboardData?.subjectPerformance).length || null,
+        ),
+      };
+
+      const mergedSubjects =
+        normalizeList(dashboardData?.subjectPerformance).length > 0
+          ? normalizeList(dashboardData?.subjectPerformance)
+          : normalizeList(performanceData?.subjectPerformance);
+
+      const nextData = {
+        ...(performanceData || {}),
+        ...(dashboardData || {}),
+        student: mergedStudent,
+        stats: mergedStats,
+        subjectPerformance: mergedSubjects,
+      };
+
+      const hasRenderableData =
+        mergedSubjects.length > 0 ||
+        firstNonEmpty(
+          mergedStudent?.firstName,
+          mergedStudent?.fullName,
+          mergedStudent?.displayName,
+        ) !== null ||
+        firstNonEmpty(mergedStats?.overallGrade) !== null;
+
+      if (!hasRenderableData) {
+        setData(null);
+        setError("Failed to load dashboard");
+        return;
       }
-    } catch (err) {
-      console.warn("Home: failed to load dashboard", err?.response || err);
-      setError(err?.response?.data?.message || "Failed to load dashboard");
-    }
-  }, []);
+
+      setData(nextData);
+      setError(null);
+
+      if (semester === null && nextData?.semesters?.selected) {
+        setSelectedSemester(nextData.semesters.selected);
+      }
+    },
+    [
+      user?.email,
+      user?.firstName,
+      user?.first_name,
+      user?.lastName,
+      user?.last_name,
+      user?.middleName,
+      user?.middle_name,
+      user?.name,
+    ],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -187,11 +453,91 @@ export default function Home() {
     ? notifications
     : notifications.slice(0, 3);
 
+  const studentNameSeed = firstNonEmpty(
+    data?.student?.displayName,
+    data?.student?.fullName,
+    data?.student?.full_name,
+    data?.student?.studentName,
+    data?.student?.student_name,
+    user?.name,
+  );
+  const splitStudentName = splitName(studentNameSeed);
+
+  const studentFirstName = firstNonEmpty(
+    data?.student?.firstName,
+    data?.student?.first_name,
+    user?.firstName,
+    user?.first_name,
+    splitStudentName.firstName,
+    "Student",
+  );
+
+  const studentFullName = firstNonEmpty(
+    studentNameSeed,
+    [
+      firstNonEmpty(data?.student?.firstName, data?.student?.first_name),
+      firstNonEmpty(data?.student?.middleName, data?.student?.middle_name),
+      firstNonEmpty(data?.student?.lastName, data?.student?.last_name),
+    ]
+      .filter(Boolean)
+      .join(" "),
+    "Student",
+  );
+
+  const studentGradeLevel = firstNonEmpty(
+    data?.student?.gradeLevel,
+    data?.student?.grade_level,
+  );
+
+  const studentSection = firstNonEmpty(
+    data?.student?.section,
+    data?.student?.classSection,
+    data?.student?.class_section,
+  );
+
+  const classLabel = [
+    studentGradeLevel ? `Grade ${studentGradeLevel}` : null,
+    studentSection,
+  ]
+    .filter(Boolean)
+    .join(" - ");
+
+  const overallGradeValue = toNumberOrNull(
+    firstNonEmpty(data?.stats?.overallGrade, data?.stats?.overall_grade),
+  );
+
+  const overallGradeLabel =
+    overallGradeValue !== null ? `${overallGradeValue}%` : "N/A";
+
   if (loading && !refreshing) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={[styles.center, { flex: 1 }]}>
           <ActivityIndicator size="large" color="#FF6B9D" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={[styles.center, { flex: 1, paddingHorizontal: 24 }]}>
+          <Text style={{ color: "#DC2626", fontSize: 14, textAlign: "center" }}>
+            {error}
+          </Text>
+          <TouchableOpacity
+            onPress={() => fetchDashboard(selectedSemester)}
+            style={{
+              marginTop: 14,
+              backgroundColor: "#DB2777",
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 10,
+            }}
+          >
+            <Text style={{ color: "#FFF", fontWeight: "700" }}>Retry</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -223,10 +569,13 @@ export default function Home() {
         >
           <View style={styles.welcomeOverlay}>
             <Text style={styles.welcomeTitle}>
-              {greeting}, {data?.student?.firstName || "Student"}!
+              {greeting}, {studentFirstName}!
             </Text>
             <Text style={styles.welcomeSubtitle}>
-              Here's a summary of your academic progress.
+              Student: {studentFullName}
+            </Text>
+            <Text style={styles.welcomeMeta}>
+              {classLabel || "Class: N/A"} • Overall Grade: {overallGradeLabel}
             </Text>
           </View>
         </ImageBackground>
@@ -245,12 +594,7 @@ export default function Home() {
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <GraduationCap size={24} color="#DB2777" />
-            <Text style={styles.statValue}>
-              {data?.stats?.overallGrade !== null &&
-              data?.stats?.overallGrade !== undefined
-                ? `${data.stats.overallGrade}%`
-                : "N/A"}
-            </Text>
+            <Text style={styles.statValue}>{overallGradeLabel}</Text>
             <Text style={styles.statLabel}>Overall Grade</Text>
           </View>
           <View style={styles.statCard}>

@@ -3,18 +3,41 @@ import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import Constants from "expo-constants";
 
-// Priority: EXPO_PUBLIC env var → app.config.js extra → emulator fallback
-const rawBase =
-  process.env.EXPO_PUBLIC_API_URL ||
-  Constants.expoConfig?.extra?.API_URL ||
-  "http://10.0.2.2:8000";
+const DEFAULT_PROD_API_BASE = "https://satis-bshs-sa.me";
+const DEFAULT_DEV_API_BASE = "http://10.0.2.2:8000";
 
-const normalizedBase = rawBase.replace(/\/+$/, "");
-const API_URL = normalizedBase.endsWith("/api")
-  ? normalizedBase
-  : `${normalizedBase}/api`;
+const toTrimmedString = (value) =>
+  typeof value === "string" ? value.trim() : "";
+
+const withProtocol = (value) => {
+  if (!value) return "";
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(value) ? value : `https://${value}`;
+};
+
+const resolveApiUrl = () => {
+  const configuredBase = [
+    toTrimmedString(process.env.EXPO_PUBLIC_API_URL),
+    toTrimmedString(Constants.expoConfig?.extra?.API_URL),
+    toTrimmedString(Constants.manifest2?.extra?.API_URL),
+    toTrimmedString(Constants.manifest2?.extra?.expoClient?.extra?.API_URL),
+    toTrimmedString(Constants.manifest?.extra?.API_URL),
+  ].find(Boolean);
+
+  const fallbackBase = __DEV__ ? DEFAULT_DEV_API_BASE : DEFAULT_PROD_API_BASE;
+  const normalizedBase = withProtocol(configuredBase || fallbackBase).replace(
+    /\/+$/,
+    "",
+  );
+
+  return normalizedBase.endsWith("/api")
+    ? normalizedBase
+    : `${normalizedBase}/api`;
+};
+
+const API_URL = resolveApiUrl();
 
 axios.defaults.baseURL = API_URL;
+axios.defaults.timeout = 15000;
 
 const AuthContext = createContext(null);
 
@@ -29,14 +52,23 @@ const deriveVerificationFlags = (userData = {}, payloadFlags = {}) => {
       ? payloadFlags.email_verified
       : Boolean(userData.email_verified_at);
 
-  const requiresEmailVerification =
+  const requiresPersonalEmail =
+    typeof payloadFlags.requires_personal_email === "boolean"
+      ? payloadFlags.requires_personal_email
+      : !hasPersonalEmail;
+
+  const requiresEmailVerificationOnly =
     typeof payloadFlags.requires_email_verification === "boolean"
       ? payloadFlags.requires_email_verification
-      : !hasPersonalEmail || !emailVerified;
+      : !emailVerified;
+
+  const requiresEmailVerification =
+    requiresPersonalEmail || requiresEmailVerificationOnly;
 
   return {
     hasPersonalEmail,
     emailVerified,
+    requiresPersonalEmail,
     requiresEmailVerification,
   };
 };
@@ -167,11 +199,17 @@ export function AuthProvider({ children }) {
         err?.response?.data?.errors?.login?.[0] ||
         err?.response?.data?.errors?.email?.[0] ||
         err?.response?.data?.errors?.password?.[0];
+      const fallbackNetworkMessage =
+        err?.code === "ECONNABORTED"
+          ? "Login request timed out. Please try again."
+          : "Unable to reach the server. Check your internet connection and API configuration.";
       const message =
         validationMessage ||
         err?.response?.data?.message ||
         err?.response?.data?.error ||
-        `Login failed (${err?.response?.status || "unknown"})`;
+        (err?.response
+          ? `Login failed (${err.response.status})`
+          : fallbackNetworkMessage);
       return { success: false, message };
     }
   };
@@ -209,36 +247,54 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const sendEmailVerification = async (emailInput) => {
+  // OTP-based email verification
+  const sendEmailOtp = async (emailInput) => {
     try {
       const trimmedEmail = String(emailInput ?? "").trim();
       const payload = trimmedEmail ? { email: trimmedEmail } : {};
-
-      const res = await axios.post(`/student/email-verification/send`, payload);
-
-      if (res.data?.user) {
-        syncSessionState({
-          userData: res.data.user,
-          payload: res.data,
-        });
-      }
-
+      const res = await axios.post(`/email-otp/send`, payload);
       return {
         success: true,
-        message: res.data?.message || "Verification email sent.",
+        message: res.data?.message || "OTP sent.",
+        retryAfterSeconds: Number(res.data?.resend_in ?? 0) || 0,
+        cooldownSeconds: 180,
       };
     } catch (err) {
-      console.error(
-        "[AuthContext] sendEmailVerification error:",
-        err?.response || err,
-      );
-
       const message =
         err?.response?.data?.errors?.email?.[0] ||
         err?.response?.data?.message ||
-        "Failed to send verification email";
+        "Failed to send OTP";
+      const retryAfterSeconds =
+        Number(err?.response?.data?.resend_in ?? 0) || 0;
+      return {
+        success: false,
+        message,
+        retryAfterSeconds,
+        cooldownSeconds: 180,
+      };
+    }
+  };
 
-      return { success: false, message };
+  const verifyEmailOtp = async (emailInput, otp) => {
+    try {
+      const trimmedEmail = String(emailInput ?? "").trim();
+      const trimmedOtp = String(otp ?? "").trim();
+      const payload = { email: trimmedEmail, otp: trimmedOtp };
+      const res = await axios.post(`/email-otp/verify`, payload);
+      // Optionally update user state here if backend returns user
+      return {
+        success: true,
+        message: res.data?.message || "Email verified.",
+      };
+    } catch (err) {
+      const message =
+        err?.response?.data?.errors?.otp?.[0] ||
+        err?.response?.data?.message ||
+        "Failed to verify OTP";
+      return {
+        success: false,
+        message,
+      };
     }
   };
 
@@ -256,8 +312,12 @@ export function AuthProvider({ children }) {
       return {
         success: true,
         requiresEmailVerification: Boolean(
-          res.data?.requires_email_verification,
+          res.data?.requires_email_verification ||
+          res.data?.requires_personal_email,
         ),
+        retryAfterSeconds: Number(res.data?.retry_after_seconds ?? 0) || 0,
+        cooldownSeconds:
+          Number(res.data?.resend_cooldown_seconds ?? 180) || 180,
       };
     } catch (err) {
       console.error(
@@ -270,6 +330,10 @@ export function AuthProvider({ children }) {
         message:
           err?.response?.data?.message ||
           "Failed to refresh verification status",
+        retryAfterSeconds:
+          Number(err?.response?.data?.retry_after_seconds ?? 0) || 0,
+        cooldownSeconds:
+          Number(err?.response?.data?.resend_cooldown_seconds ?? 180) || 180,
       };
     }
   };
